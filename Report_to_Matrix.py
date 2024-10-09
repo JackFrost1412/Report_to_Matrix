@@ -1,10 +1,8 @@
 import pandas as pd
 from openpyxl import load_workbook
 
+# Hàm tìm version tiếp theo của sheet hiện có (ví dụ: List DIM_v1, v2,...)
 def get_next_version(sheet_name, existing_sheets):
-    """
-    Hàm tìm version tiếp theo của sheet hiện có (ví dụ: List DIM_v1, v2,...).
-    """
     version = 0
     base_name = sheet_name
     while f"{base_name}_v{version+1}" in existing_sheets:
@@ -13,7 +11,7 @@ def get_next_version(sheet_name, existing_sheets):
 
 def report_to_matrix(file_path):
     sheet_dict = pd.read_excel(file_path, sheet_name=None)
-
+        
     data_dim = []
     data_mea = []
     list_dim = pd.DataFrame(columns=['DIM name', 'Thuộc tính'])
@@ -33,35 +31,34 @@ def report_to_matrix(file_path):
             for index, row in df.iterrows():
                 if row["Loại"] == "Chiều" or row["Loại"] == "Thuộc tính":
                     data_dim.append({
-                        'DIM name': row['Chiều cơ sở'],
-                        'Thuộc tính': row['Tên Chiều/Chỉ tiêu']
+                        'DIM name': row['Chiều cơ sở'].upper(),
+                        'Thuộc tính': row['Tên Chiều/Chỉ tiêu'].upper()
                     })
-                    rpt_dim_dict[rpt_id].append(row["Chiều cơ sở"])
+                    rpt_dim_dict[rpt_id].append(row["Chiều cơ sở"].upper())
 
                 elif row["Loại"] == "Chỉ tiêu":
                     data_mea.append({
-                        'MEA name': row['Chỉ tiêu cơ sở'],
-                        'Phân loại': 'Chỉ tiêu cơ sở',
-                        #'MEA cơ sở': row['Chỉ tiêu cơ sở']
+                        'MEA name': row['Chỉ tiêu cơ sở'].upper(),
+                        'Phân loại': 'Chỉ tiêu cơ sở'.upper(),
                     })
-                    rpt_mea_dict[rpt_id].append(row["Chỉ tiêu cơ sở"])
+                    rpt_mea_dict[rpt_id].append(row["Chỉ tiêu cơ sở"].upper())
 
                 elif row["Loại"] == "Chỉ tiêu phái sinh" and pd.notna(row["Chỉ tiêu cơ sở"]):
                     data_mea.append({
-                        'MEA name': row['Tên Chiều/Chỉ tiêu'],
-                        'Phân loại': 'Chỉ tiêu phái sinh',
-                        'MEA cơ sở': row['Chỉ tiêu cơ sở']
+                        'MEA name': row['Tên Chiều/Chỉ tiêu'].upper(),
+                        'Phân loại': 'Chỉ tiêu phái sinh'.upper(),
+                        'MEA cơ sở': row['Chỉ tiêu cơ sở'].upper()
                     })
-                    rpt_mea_dict[rpt_id].append(row["Tên Chiều/Chỉ tiêu"])
-                    rpt_mea_dict[rpt_id].append(row["Chỉ tiêu cơ sở"])
+                    rpt_mea_dict[rpt_id].append(row["Tên Chiều/Chỉ tiêu"].upper())
+                    rpt_mea_dict[rpt_id].append(row["Chỉ tiêu cơ sở"].upper())
 
                 elif row["Loại"] == "Chỉ tiêu phái sinh" and pd.notna(row["Chiều cơ sở"]):
                     data_dim.append({
-                        'DIM name': row['Chiều cơ sở'],
-                        'Thuộc tính': row['Chi tiết'],
+                        'DIM name': row['Chiều cơ sở'].upper(),
+                        'Thuộc tính': row['Chi tiết'].upper(),
                     })
-                    rpt_mea_dict[rpt_id].append(row["Tên Chiều/Chỉ tiêu"])
-                    rpt_dim_dict[rpt_id].append(row["Chiều cơ sở"])
+                    rpt_mea_dict[rpt_id].append(row["Tên Chiều/Chỉ tiêu"].upper())
+                    rpt_dim_dict[rpt_id].append(row["Chiều cơ sở"].upper())
 
     list_dim = pd.concat([list_dim, pd.DataFrame(data_dim)], ignore_index=True).drop_duplicates()
     list_mea = pd.concat([list_mea, pd.DataFrame(data_mea)], ignore_index=True).drop_duplicates()
