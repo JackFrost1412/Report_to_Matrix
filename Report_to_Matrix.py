@@ -63,8 +63,8 @@ def report_to_matrix(file_path):
                     rpt_mea_dict[rpt_id].append(row["Tên Chiều/Chỉ tiêu"])
                     rpt_dim_dict[rpt_id].append(row["Chiều cơ sở"])
 
-    list_dim = pd.concat([list_dim, pd.DataFrame(data_dim)], ignore_index=True)
-    list_mea = pd.concat([list_mea, pd.DataFrame(data_mea)], ignore_index=True)
+    list_dim = pd.concat([list_dim, pd.DataFrame(data_dim)], ignore_index=True).drop_duplicates()
+    list_mea = pd.concat([list_mea, pd.DataFrame(data_mea)], ignore_index=True).drop_duplicates()
 
     list_dim.sort_values(by='DIM name', inplace=True)
     list_mea.sort_values(by='MEA name', inplace=True)
