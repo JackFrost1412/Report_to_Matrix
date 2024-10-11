@@ -9,9 +9,17 @@ def get_next_version(sheet_name, existing_sheets):
         version += 1
     return f"{base_name}_v{version+1}"
 
+# Hàm chuẩn hóa toàn bộ DataFrame: chuẩn hóa các chuỗi thành dạng title case
+def normalize_dataframe(df):
+    columns_to_normalize = ['Tên Chiều/Chỉ tiêu', 'Chiều cơ sở', 'Chỉ tiêu cơ sở', 'Chi tiết']
+    
+    for column in columns_to_normalize:
+        df[column] = df[column].apply(lambda value: value.title() if isinstance(value, str) else value)
+    return df
+
 def report_to_matrix(file_path):
     sheet_dict = pd.read_excel(file_path, sheet_name=None)
-        
+
     data_dim = []
     data_mea = []
     list_dim = pd.DataFrame(columns=['DIM name', 'Thuộc tính'])
@@ -23,6 +31,9 @@ def report_to_matrix(file_path):
 
     for sheet_name, df in sheet_dict.items():
         if sheet_name.startswith("BA"):
+            # Chuẩn hóa lại DataFrame
+            df = normalize_dataframe(df)
+
             for rpt_id in df["Báo cáo"].unique():
                 rpt_dim_dict[rpt_id] = []
                 rpt_mea_dict[rpt_id] = []
@@ -31,34 +42,34 @@ def report_to_matrix(file_path):
             for index, row in df.iterrows():
                 if row["Loại"] == "Chiều" or row["Loại"] == "Thuộc tính":
                     data_dim.append({
-                        'DIM name': row['Chiều cơ sở'].upper(),
-                        'Thuộc tính': row['Tên Chiều/Chỉ tiêu'].upper()
+                        'DIM name': row['Chiều cơ sở'],
+                        'Thuộc tính': row['Tên Chiều/Chỉ tiêu']
                     })
-                    rpt_dim_dict[rpt_id].append(row["Chiều cơ sở"].upper())
+                    rpt_dim_dict[rpt_id].append(row["Chiều cơ sở"])
 
                 elif row["Loại"] == "Chỉ tiêu":
                     data_mea.append({
-                        'MEA name': row['Chỉ tiêu cơ sở'].upper(),
-                        'Phân loại': 'Chỉ tiêu cơ sở'.upper(),
+                        'MEA name': row['Chỉ tiêu cơ sở'],
+                        'Phân loại': 'Chỉ tiêu cơ sở',
                     })
-                    rpt_mea_dict[rpt_id].append(row["Chỉ tiêu cơ sở"].upper())
+                    rpt_mea_dict[rpt_id].append(row["Chỉ tiêu cơ sở"])
 
                 elif row["Loại"] == "Chỉ tiêu phái sinh" and pd.notna(row["Chỉ tiêu cơ sở"]):
                     data_mea.append({
-                        'MEA name': row['Tên Chiều/Chỉ tiêu'].upper(),
-                        'Phân loại': 'Chỉ tiêu phái sinh'.upper(),
-                        'MEA cơ sở': row['Chỉ tiêu cơ sở'].upper()
+                        'MEA name': row['Tên Chiều/Chỉ tiêu'],
+                        'Phân loại': 'Chỉ tiêu phái sinh',
+                        'MEA cơ sở': row['Chỉ tiêu cơ sở']
                     })
-                    rpt_mea_dict[rpt_id].append(row["Tên Chiều/Chỉ tiêu"].upper())
-                    rpt_mea_dict[rpt_id].append(row["Chỉ tiêu cơ sở"].upper())
+                    rpt_mea_dict[rpt_id].append(row["Tên Chiều/Chỉ tiêu"])
+                    rpt_mea_dict[rpt_id].append(row["Chỉ tiêu cơ sở"])
 
                 elif row["Loại"] == "Chỉ tiêu phái sinh" and pd.notna(row["Chiều cơ sở"]):
                     data_dim.append({
-                        'DIM name': row['Chiều cơ sở'].upper(),
-                        'Thuộc tính': row['Chi tiết'].upper(),
+                        'DIM name': row['Chiều cơ sở'],
+                        'Thuộc tính': row['Chi tiết'],
                     })
-                    rpt_mea_dict[rpt_id].append(row["Tên Chiều/Chỉ tiêu"].upper())
-                    rpt_dim_dict[rpt_id].append(row["Chiều cơ sở"].upper())
+                    rpt_mea_dict[rpt_id].append(row["Tên Chiều/Chỉ tiêu"])
+                    rpt_dim_dict[rpt_id].append(row["Chiều cơ sở"])
 
     list_dim = pd.concat([list_dim, pd.DataFrame(data_dim)], ignore_index=True).drop_duplicates()
     list_mea = pd.concat([list_mea, pd.DataFrame(data_mea)], ignore_index=True).drop_duplicates()
@@ -106,23 +117,26 @@ def report_to_matrix(file_path):
     workbook = load_workbook(file_path)
     existing_sheets = workbook.sheetnames
 
-    # Nếu sheet đã tồn tại, đổi tên thành phiên bản backup
+    # Ghi mới các sheet với version tiếp theo
     sheet_names = ['List DIM', 'List MEA', 'Matrix RPT_DIM', 'Matrix RPT_MEA', 'Matrix MEA_DIM']
+    versioned_sheet_names = []
     for sheet_name in sheet_names:
-        if sheet_name in existing_sheets:
-            new_name = get_next_version(sheet_name, existing_sheets)
-            workbook[sheet_name].title = new_name
-            existing_sheets.append(new_name)  # Cập nhật danh sách sheet
+        new_name = get_next_version(sheet_name, existing_sheets)
+        versioned_sheet_names.append(new_name)
+        existing_sheets.append(new_name)
 
     # Lưu lại workbook
-    workbook.save(file_path)
+    # workbook.save(file_path)
 
-    # Sử dụng ExcelWriter để ghi 3 DataFrame vào các sheet riêng
+    # Ghi các DataFrame vào các sheet riêng
     with pd.ExcelWriter(file_path, engine='openpyxl', mode='a') as writer:
-        list_dim.to_excel(writer, sheet_name='List DIM', index=False)
-        list_mea.to_excel(writer, sheet_name='List MEA', index=False)
-        rpt_dim_df.to_excel(writer, sheet_name='Matrix RPT_DIM', index=True)
-        rpt_mea_df.to_excel(writer, sheet_name='Matrix RPT_MEA', index=True)
-        dim_mea_df.to_excel(writer, sheet_name='Matrix MEA_DIM', index=True)
+        list_dim.to_excel(writer, sheet_name=versioned_sheet_names[0], index=False)
+        list_mea.to_excel(writer, sheet_name=versioned_sheet_names[1], index=False)
+        rpt_dim_df.to_excel(writer, sheet_name=versioned_sheet_names[2], index=True)
+        rpt_mea_df.to_excel(writer, sheet_name=versioned_sheet_names[3], index=True)
+        dim_mea_df.to_excel(writer, sheet_name=versioned_sheet_names[4], index=True)
         
-    print("Đã xuất thành công các sheet ma trận chỉ tiêu vào file Excel.")
+    versions = [name.split('_v')[-1] for name in versioned_sheet_names]
+    
+    print("\nĐã xuất thành công các sheet ma trận chỉ tiêu vào file Excel.")
+    print(f"Phiên bản hiện tại: version {versions[0]}.\n")
