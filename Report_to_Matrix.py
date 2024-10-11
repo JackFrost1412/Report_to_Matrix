@@ -136,7 +136,7 @@ def report_to_matrix(file_path):
         rpt_mea_df.to_excel(writer, sheet_name=versioned_sheet_names[3], index=True)
         dim_mea_df.to_excel(writer, sheet_name=versioned_sheet_names[4], index=True)
         
-    versions = [name.split('_v')[-1] for name in versioned_sheet_names]
-    
+    versions = versioned_sheet_names[0].split('_v')[-1] 
+
     print("\nĐã xuất thành công các sheet ma trận chỉ tiêu vào file Excel.")
     print(f"Phiên bản hiện tại: version {versions[0]}.\n")
