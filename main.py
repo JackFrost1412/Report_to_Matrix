@@ -10,6 +10,6 @@ except (FileNotFoundError, KeyError) as e:
     print(f"Error reading config file: {e}")
     exit(1)
 
-file_path = fr"Matrix_BRD\{file}"
+file_path = fr"Matrix_BRD/{file}"
 
 report_to_matrix(file_path)
